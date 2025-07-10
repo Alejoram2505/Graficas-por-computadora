@@ -3,7 +3,7 @@ import tkinter as tk
 WIDTH = 800
 HEIGHT = 600
 
-# Polígonos definidos (coordenadas originales)
+# Polígonos originales
 original_polygons = [
     [(165, 380), (185, 360), (180, 330), (207, 345), (233, 330),
      (230, 360), (250, 380), (220, 385), (205, 410), (193, 383)],
@@ -21,16 +21,17 @@ original_polygons = [
     [(682, 175), (708, 120), (735, 148), (739, 170)]
 ]
 
-# Convertimos a coordenadas con eje Y invertido
+# Colores para los polígonos
+fill_colors = ['lightblue', 'lightgreen', 'orange', 'gray', 'white']  
+
+# Invertir eje Y
 polygons = [
     [(x, HEIGHT - y) for (x, y) in poly]
     for poly in original_polygons
 ]
 
-# Índice del agujero
 holes = [4]
 
-# Dibuja línea entre dos puntos (Bresenham simplificado)
 def draw_line(canvas, x0, y0, x1, y1, color='black'):
     dx = abs(x1 - x0)
     dy = abs(y1 - y0)
@@ -57,7 +58,6 @@ def draw_line(canvas, x0, y0, x1, y1, color='black'):
             y += sy
     canvas.create_line(x, y, x + 1, y, fill=color)
 
-# Algoritmo de Scanline
 def fill_polygon(canvas, vertices, color='gray'):
     edges = []
     n = len(vertices)
@@ -86,24 +86,17 @@ def fill_polygon(canvas, vertices, color='gray'):
                 x_end = int(x_intersections[i+1])
                 canvas.create_line(x_start, y, x_end, y, fill=color)
 
-# Dibujar todos los polígonos
 def draw_polygons(canvas):
     for idx, polygon in enumerate(polygons):
-        if idx not in holes:
-            fill_polygon(canvas, polygon, color='gray')
-        else:
-            # Agujero: rellenar con fondo blanco
-            fill_polygon(canvas, polygon, color='white')
-
-        # Dibujar bordes
+        fill_color = fill_colors[idx] if idx < len(fill_colors) else 'gray'
+        fill_polygon(canvas, polygon, color=fill_color)
         for i in range(len(polygon)):
             x0, y0 = polygon[i]
             x1, y1 = polygon[(i + 1) % len(polygon)]
             draw_line(canvas, x0, y0, x1, y1, color='black')
 
-# Crear ventana
 root = tk.Tk()
-root.title("Relleno de Polígonos - Scanline")
+root.title("Relleno de Polígonos - Colores y Agujeros")
 canvas = tk.Canvas(root, width=WIDTH, height=HEIGHT, bg='white')
 canvas.pack()
 
