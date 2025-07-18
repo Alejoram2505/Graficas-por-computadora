@@ -92,9 +92,9 @@ def draw_triangle(screen, zbuffer, pts, z_vals, color):
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("OBJ Build Animation - Vagabond")
+    pygame.display.set_caption("OBJ Build Animation - Barco")
 
-    vertices, faces = load_obj("Vagabond.obj")
+    vertices, faces = load_obj("Barco.obj")
     vertices = normalize_model(vertices, scale_up=2.0)
 
     triangle_colors = [
