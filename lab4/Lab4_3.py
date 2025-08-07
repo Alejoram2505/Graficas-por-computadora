@@ -5,7 +5,6 @@ import math
 WIDTH, HEIGHT = 800, 800
 BLACK = (0, 0, 0)
 
-# Utilidades
 def normalize(v):
     norm = np.linalg.norm(v)
     return v / norm if norm != 0 else v
@@ -54,7 +53,6 @@ def scale(sx, sy, sz):
         [0, 0, 0, 1]
     ])
 
-# Cargador de modelo OBJ
 class Obj:
     def __init__(self, filename):
         self.vertices = []
@@ -90,9 +88,8 @@ class Obj:
 # Shader reflectivo tipo diamante
 class DiamondShader:
     def __init__(self):
-        self.base_color = np.array([230, 230, 255])  # Azul claro casi blanco
-        self.shininess = 512  # Brillo muy alto para reflejo intenso
-
+        self.base_color = np.array([230, 230, 255]) 
+        self.shininess = 512  
     def vertex_shader(self, position, normal, light_dir, view_dir):
         normal = normalize(normal)
         light_dir = normalize(light_dir)
@@ -110,7 +107,6 @@ class DiamondShader:
 
         return np.clip(final_color, 0, 255)
 
-# Renderer
 class Renderer:
     def __init__(self, width, height):
         pygame.init()

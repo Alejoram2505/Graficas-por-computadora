@@ -93,21 +93,17 @@ class CRTGlitchShader:
     def vertex_shader(self, frag_pos, normal, light_dir, view_dir, x, y):
         base = self.base_color.copy()
 
-        # CRT scanlines (gruesas)
         if (y % 12) < 6:
             base *= 0.2
 
-        # Ruido fuerte
         noise_strength = random.uniform(0.4, 1.8)
         base *= noise_strength
 
-        # Curvatura de pantalla
         dx = (x - WIDTH / 2) / (WIDTH / 2)
         dy = (y - HEIGHT / 2) / (HEIGHT / 2)
         distortion = 1 + 0.4 * (dx**2 + dy**2)
         base *= 1 / distortion
 
-        # Glitch RGB aumentado
         glitch_scale = 50
         shift_r = random.randint(-3, 3)
         shift_g = random.randint(-3, 3)
