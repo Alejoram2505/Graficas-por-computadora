@@ -2,12 +2,13 @@ import pygame
 import numpy as np
 import math
 import random
+import os
+from PIL import Image
+import shutil
 
-# Configuración de la ventana
 WIDTH = 800
 HEIGHT = 800
 
-# Utils
 def normalize(v):
     norm = np.linalg.norm(v)
     return v / norm if norm != 0 else v
@@ -26,7 +27,6 @@ def hsv_to_rgb(h, s, v):
     if i == 4: return (t, p, v)
     if i == 5: return (v, p, q)
 
-# Disco Light
 class DiscoLight:
     def __init__(self, radius, speed, phase):
         self.radius = radius
@@ -37,19 +37,17 @@ class DiscoLight:
 
     def position(self, time):
         angle = time * self.speed + self.phase
-        cx = WIDTH // 2
-        cy = HEIGHT // 2
+        cx, cy = WIDTH // 2, HEIGHT // 2
         x = int(cx + self.radius * math.cos(angle))
         y = int(cy + self.radius * math.sin(angle))
         return x, y
 
     def color(self, time):
         hue = (self.hue_offset + time * 0.1) % 1.0
-        brightness = (math.sin(time * 3 + self.blink_phase * 2 * math.pi) + 1) / 2  # 0 to 1
+        brightness = (math.sin(time * 3 + self.blink_phase * 2 * math.pi) + 1) / 2
         rgb = hsv_to_rgb(hue, 1.0, brightness)
         return tuple(int(c * 255) for c in rgb)
 
-# Shader
 class DiscoShader:
     def __init__(self):
         self.time = 0
@@ -78,7 +76,6 @@ class DiscoShader:
 
         return tuple(np.clip(result_color, 0, 255).astype(np.uint8))
 
-# OBJ loader
 class Obj:
     def __init__(self, filename, texture_filename):
         self.vertices = []
@@ -120,7 +117,6 @@ class Obj:
         self.texture_width = self.texture.get_width()
         self.texture_height = self.texture.get_height()
 
-# Matrices
 def look_at(eye, target, up):
     forward = normalize(np.array(target) - np.array(eye))
     right = normalize(np.cross(forward, up))
@@ -165,7 +161,6 @@ def scale(sx, sy, sz):
         [0, 0, 0, 1]
     ])
 
-# Render
 class Renderer:
     def __init__(self, width, height):
         self.width = width
@@ -218,7 +213,6 @@ class Renderer:
                         continue
         pygame.display.flip()
 
-# Main
 def main():
     renderer = Renderer(WIDTH, HEIGHT)
     model = Obj("objetos/casa_madera.obj", "texturas/casa_madera.png")
@@ -232,7 +226,11 @@ def main():
     viewport = viewport_matrix(0, 0, WIDTH, HEIGHT)
     model_matrix = scale(0.5, 0.5, 0.5) @ translate(0, -0.5, 0)
 
+    if not os.path.exists("frames"):
+        os.makedirs("frames")
+
     running = True
+    frame_count = 0
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -241,9 +239,30 @@ def main():
         renderer.shader.time += 0.03
         transform_matrix = viewport @ projection @ view @ model_matrix
         renderer.render_model(model, transform_matrix)
+
+        # Guardar frame
+        pygame.image.save(renderer.screen, f"frames/frame_{frame_count:04}.png")
+        frame_count += 1
+
+        if renderer.shader.time > 15:  
+            running = False
+
         pygame.time.wait(10)
 
     pygame.quit()
+
+    # Crear GIF
+    frames = []
+    for file in sorted(os.listdir("frames")):
+        if file.endswith(".png"):
+            img = Image.open(os.path.join("frames", file))
+            frames.append(img)
+
+    if frames:
+        frames[0].save("animacion.gif", save_all=True, append_images=frames[1:], duration=80, loop=0)
+        print("GIF guardado como animacion.gif")
+
+    shutil.rmtree("frames")
 
 if __name__ == "__main__":
     main()
