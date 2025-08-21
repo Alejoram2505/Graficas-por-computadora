@@ -2,17 +2,13 @@ import pygame
 import os
 import numpy as np
 
-# ===========================
 # CONFIGURACIÓN
-# ===========================
 WIDTH, HEIGHT = 1000, 700
 FPS = 30
 OBJ_DIR = "objetos"
 TEX_DIR = "texturas"
 
-# ===========================
 # CÁMARA Y PROYECCIÓN
-# ===========================
 def perspective_projection(fov, aspect, near, far):
     f = 1 / np.tan(np.radians(fov) / 2)
     return np.array([
@@ -45,9 +41,7 @@ def transform_vertex(v, model, view, proj):
     z = transformed[2]
     return (x, y, z)
 
-# ===========================
 # OBJ LOADER
-# ===========================
 class OBJ:
     def __init__(self, path):
         self.vertices = []
@@ -87,9 +81,7 @@ class OBJ:
                         else:
                             self.faces_vt.append(None)
 
-# ===========================
 # FUNCIONES DE RENDER
-# ===========================
 def barycentric_coords(p, a, b, c):
     denom = ((b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1]))
     if denom == 0:
@@ -138,9 +130,7 @@ def draw_obj(screen, zbuffer, obj, texture, solid_color, model_matrix, view, pro
         else:
             pygame.draw.polygon(screen, (180, 180, 180), pts)
 
-# ===========================
 # MAIN LOOP
-# ===========================
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))

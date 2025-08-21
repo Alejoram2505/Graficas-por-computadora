@@ -8,8 +8,8 @@ BLACK = (0, 0, 0)
 # -------------------- Shader de gradiente vertical --------------------
 class GradientShader:
     def __init__(self):
-        self.color1 = np.array([0, 255, 100])  # Verde brillante
-        self.color2 = np.array([0, 100, 50])   # Verde oscuro
+        self.color1 = np.array([0, 255, 100]) 
+        self.color2 = np.array([0, 100, 50])   
 
     def vertex_shader(self, position, x, y, height):
         t = (y % height) / height if height != 0 else 0
@@ -89,9 +89,8 @@ def main():
 
         screen.fill(BLACK)
 
-        # Posición y escala de la planta
-        position = (WIDTH // 2, HEIGHT // 2 + 80)  # Centrado y ligeramente abajo
-        scale = 60  # Escala visual adecuada
+        position = (WIDTH // 2, HEIGHT // 2 + 80)  
+        scale = 60  
 
         draw_obj_gradient(screen, planta, position, scale, shader)
 

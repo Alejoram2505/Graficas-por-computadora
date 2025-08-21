@@ -9,7 +9,7 @@ BLACK = (0, 0, 0)
 # -------------------- Static Noise Shader --------------------
 class StaticNoiseShader:
     def __init__(self):
-        self.base_color = (101, 67, 33)  # Café madera
+        self.base_color = (101, 67, 33)  
         self.noise_intensity = 0.3
 
     def vertex_shader(self, position, x, y):
@@ -85,7 +85,6 @@ class Obj:
                     if len(face) == 3:
                         self.faces.append(face)
                     elif len(face) > 3:
-                        # triangulación simple para caras con más de 3 vértices
                         for i in range(1, len(face) - 1):
                             self.faces.append([face[0], face[i], face[i+1]])
 
@@ -121,7 +120,7 @@ class Renderer:
 def main():
     shader = StaticNoiseShader()
     renderer = Renderer(WIDTH, HEIGHT, shader)
-    model = Obj("objetos/banca.obj")  # asegúrate de tener la ruta correcta
+    model = Obj("objetos/banca.obj") 
 
     # Cámara
     eye = [0, 1, 5]
