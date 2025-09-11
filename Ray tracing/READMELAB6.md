@@ -4,7 +4,7 @@
 Este proyecto implementa un **ray tracer básico en Python** usando `numpy`, `pygame` y soporte para cargar un **environment map** (`.hdr` o `.jpg/.png`).  
 El objetivo es renderizar **seis esferas** con diferentes materiales (opacos, reflectivos y transparentes) dentro de un entorno realista.
 
-![Render final](esferas.jpg)
+![Render final](esferas.png)
 
 ---
 
