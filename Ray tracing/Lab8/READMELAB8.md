@@ -1,22 +1,26 @@
-# Lab 8 – Ray Tracing: Figura Cápsula (50%)
+# Lab 8 – Ray Tracing: Cápsula + Toroide (100%)
 
-![Render final](render_lab8_capsula.png)
-
----
-
-##  ¿Qué pide el lab y cómo se cumple?
-
-* **Implementar una figura distinta a las vistas en clase** → Se implementa **Cápsula** (`Capsula`).
-* **Demostración**: Renderizar **3 veces** la figura con **diferentes tamaños, posiciones y materiales** → En la escena hay **tres cápsulas**:
-
-  * **Mate (opaca)** – color arcilla claro.
-  * **Reflectiva** – cromado azulado.
-  * **Transparente** – vidrio con tinte verde agua.
+![Render final](render_lab8.png)
 
 ---
 
-## Algoritmo de Intersección Rayo–Cápsula
+## ✅ ¿Qué pide el lab y cómo se cumple?
 
-Una cápsula se modela como **cilindro finito** de radio *r* a lo largo del segmento **AB**, más **dos semiesferas** de radio *r* centradas en los extremos **A** y **B**.
+* **Implementar dos figuras distintas a las vistas en clase** → Se implementan:
+  * **Cápsula** (`Capsule`)
+  * **Toroide** (`Torus`)
 
-## Creado por Diego Ramírez
+* **Demostración**: Renderizar **3 veces cada figura** con **diferentes tamaños, posiciones y materiales** → En la escena hay:
+  * **Cápsulas:**
+    * **Mate (opaca)** – tono arcilla claro.
+    * **Reflectiva** – cromado azulado.
+    * **Transparente** – vidrio con tinte verde agua.
+  * **Toroides:**
+    * **Mate (opaco)** – violeta suave.
+    * **Reflectivo** – metálico pulido.
+    * **Transparente** – vidrio claro con IOR.
+
+---
+
+## 📎 Autor
+Creado por **Diego Ramírez**

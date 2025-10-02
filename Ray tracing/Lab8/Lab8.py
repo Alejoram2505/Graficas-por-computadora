@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import imageio.v2 as imageio
 
 WINDOW_W, WINDOW_H = 900, 600
-RENDER_W, RENDER_H = 300, 300
+RENDER_W, RENDER_H = 1000, 1000
 FOV_DEG = 65
 MAX_DEPTH = 5
 EPSILON = 1e-3
@@ -29,6 +29,14 @@ def fresnel_schlick(cos_theta, F0):
 def to_srgb(img):
     return np.clip(np.power(np.clip(img, 0, 1), 1/2.2), 0, 1)
 
+# Base ortonormal para orientar toroides
+def make_basis(n):
+    n = normalize(n)
+    a = np.array([1.0, 0.0, 0.0]) if abs(n[2]) > 0.999 else np.array([0.0, 0.0, 1.0])
+    t = normalize(np.cross(a, n))
+    b = np.cross(n, t)
+    return t, b, n
+
 # ------------------ materiales ------------------
 @dataclass
 class Material:
@@ -52,7 +60,7 @@ class Plane:
         if t > EPSILON: return t, (n if denom < 0 else -n)
         return None, None
 
-# --------- FIGURA: CÁPSULA ---------
+# --------- FIGURA 1: CÁPSULA ---------
 @dataclass
 class Capsule:
     a: np.ndarray  # extremo A
@@ -60,11 +68,9 @@ class Capsule:
     radius: float
     material: Material
     def intersect(self, ro, rd):
-        # Eje de la cápsula
         ba = self.b - self.a
         L = np.linalg.norm(ba)
         if L < 1e-8:
-            # degen: tratar como esfera
             oc = ro - self.a
             b = np.dot(oc, rd)
             c = np.dot(oc, oc) - self.radius * self.radius
@@ -77,7 +83,6 @@ class Capsule:
             n = normalize(p - self.a)
             return t, n
         baN = ba / L
-        # Componentes perpendiculares a baN
         oc = ro - self.a
         rd_par = np.dot(rd, baN)
         oc_par = np.dot(oc, baN)
@@ -91,15 +96,11 @@ class Capsule:
             disc = B*B - 4*A*C
             if disc >= 0:
                 sqrtD = math.sqrt(disc)
-                t1 = (-B - sqrtD) / (2*A)
-                t2 = (-B + sqrtD) / (2*A)
-                for tt in [t1, t2]:
+                for tt in [(-B - sqrtD) / (2*A), (-B + sqrtD) / (2*A)]:
                     if tt > EPSILON:
-                        # comprobar si el punto cae dentro del segmento (proyección s)
                         s = oc_par + tt * rd_par
                         if 0.0 <= s <= L:
                             t_cyl = tt if (t_cyl is None or tt < t_cyl) else t_cyl
-        # Intersección con las esferas de los extremos
         def ray_sphere(center):
             oc2 = ro - center
             b2 = np.dot(oc2, rd)
@@ -112,23 +113,61 @@ class Capsule:
             return min([t for t in [tA, tB] if t > EPSILON], default=None)
         t_sa = ray_sphere(self.a)
         t_sb = ray_sphere(self.b)
-        # Elegir el t más cercano válido
         candidates = [t for t in [t_cyl, t_sa, t_sb] if t is not None]
         if not candidates: return None, None
         t = min(candidates)
         p = ro + t*rd
-        # normal
         s = np.dot(p - self.a, baN)
         if 0.0 < s < L and t == t_cyl:
             axis_pt = self.a + s * baN
             n = normalize(p - axis_pt)
         else:
-            # esfera más cercana
             if np.linalg.norm(p - self.a) < np.linalg.norm(p - self.b):
                 n = normalize(p - self.a)
             else:
                 n = normalize(p - self.b)
         return t, n
+
+# --------- FIGURA 2: TOROIDE ---------
+@dataclass
+class Torus:
+    center: np.ndarray
+    normal: np.ndarray  # eje del toroide
+    R: float            # radio mayor
+    r: float            # radio menor
+    material: Material
+    def intersect(self, ro, rd):
+        # Transformar rayo a espacio local (eje z = normal)
+        t, b, n = make_basis(self.normal)
+        o = ro - self.center
+        O = np.array([np.dot(o, t), np.dot(o, b), np.dot(o, n)])
+        D = np.array([np.dot(rd, t), np.dot(rd, b), np.dot(rd, n)])
+        def sq_poly(o, d):
+            return np.array([o*o, 2*o*d, d*d], dtype=np.float64)
+        px2 = sq_poly(O[0], D[0])
+        py2 = sq_poly(O[1], D[1])
+        pz2 = sq_poly(O[2], D[2])
+        s = px2 + py2 + pz2
+        g = s.copy(); g[0] += (self.R*self.R - self.r*self.r)
+        g2 = np.polynomial.polynomial.polymul(g, g)
+        h = px2 + py2
+        h_pad = np.zeros(5, dtype=np.float64); h_pad[:3] = h
+        f = g2 - (4 * self.R * self.R) * h_pad
+        coeffs = f[::-1]
+        roots = np.roots(coeffs)
+        ts = []
+        for rroot in roots:
+            if abs(rroot.imag) < 1e-6:
+                tr = float(rroot.real)
+                if tr > EPSILON: ts.append(tr)
+        if not ts: return None, None
+        t_hit = min(ts)
+        P = O + t_hit * D
+        g0 = (P[0]*P[0] + P[1]*P[1] + P[2]*P[2]) + self.R*self.R - self.r*self.r
+        grad = 4*g0*P - 8*(self.R*self.R) * np.array([P[0], P[1], 0.0])
+        n_local = normalize(grad)
+        n_world = normalize(n_local[0]*t + n_local[1]*b + n_local[2]*n)
+        return t_hit, n_world
 
 # ------------------ luces ------------------
 @dataclass
@@ -222,20 +261,30 @@ def build_room_scene(r):
     mirrorish= Material(np.array([0.55, 0.75, 0.95]), kd=0.22, ks=0.85, shininess=220, reflection=0.65, ka=0.01)
     glassy   = Material(np.array([0.85, 0.98, 0.92]), kd=0.05, ks=0.55, shininess=130, reflection=0.05, transparency=0.92, ior=1.45, ka=0.005)
 
-    r.add_object(Capsule(np.array([-0.80, -1.40, -6.60]), np.array([-1.00,  0.80, -6.90]), 0.36, matte))          # opaca
-    r.add_object(Capsule(np.array([ 0.2, -1.6, -7.2]), np.array([ 1.3,  0.0, -6.8]), 0.30, mirrorish))            # reflectiva
-    r.add_object(Capsule(np.array([ 2.1, -1.1, -7.6]), np.array([ 2.7,  1.0, -7.9]), 0.26, glassy))               # transparente
+    r.add_object(Capsule(np.array([-2.2, -1.4, -6.3]), np.array([-2.2, 0.2, -6.1]), 0.26, matte)) 
+    r.add_object(Capsule(np.array([-0.2, -1.8, -7.4]), np.array([ 0.9, -0.2, -7.0]), 0.24, mirrorish)) 
+    r.add_object(Capsule(np.array([ 1.8, -1.6, -7.6]), np.array([ 2.2, -0.1, -7.9]), 0.22, glassy)) 
+    
+    # --- TOROIDES ---
+    t_matte    = Material(np.array([0.80, 0.70, 0.95]), kd=0.92, ks=0.10, shininess=24, reflection=0.04, ka=0.02)
+    t_mirror   = Material(np.array([0.95, 0.95, 0.98]), kd=0.20, ks=0.90, shininess=256, reflection=0.55, ka=0.01)
+    t_glassy   = Material(np.array([0.90, 0.97, 1.00]), kd=0.05, ks=0.55, shininess=120, reflection=0.05, transparency=0.92, ior=1.45, ka=0.005)
 
-    # luz (una puntual cenital con menos hotspot)
+    r.add_object(Torus(np.array([-1.6,  1.00, -6.80]), np.array([0.0, 0.0, 1.0]), 0.60, 0.17, t_matte))     
+    r.add_object(Torus(np.array([ 0.00, 1.15, -6.70]), np.array([0.0, 0.0, 1.0]), 0.58, 0.16, t_mirror))    
+    r.add_object(Torus(np.array([ 1.6,  1.00, -6.90]), np.array([0.0, 1.0, 0.0]), 0.62, 0.18, t_glassy))    
+
+    # luz
+
     r.add_light(PointLight(np.array([0, 2.6, -6.5]), np.array([1.0, 1.0, 1.0]), 6.0, k=0.45))
 
 
 def main():
     pygame.init(); screen = pygame.display.set_mode((WINDOW_W, WINDOW_H))
-    pygame.display.set_caption("Ray Tracer - Lab 8")
+    pygame.display.set_caption("Ray Tracer - Lab 8 (Cápsula + Toroide)")
     r = Renderer(RENDER_W, RENDER_H, FOV_DEG); build_room_scene(r)
     img = r.render_progressive(screen)
-    imageio.imwrite("render_lab8_capsula.png", img)
+    imageio.imwrite("render_lab8.png", img)
     running = True
     while running:
         for e in pygame.event.get():
