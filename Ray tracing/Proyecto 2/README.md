@@ -30,8 +30,8 @@ Se utilizaron figuras básicas y figuras nuevas implementadas manualmente:
 | Toroide | Nueva |
 | Elipsoides | Nueva |
 | Disco de energia | Nueva |
-➡ **Total de figuras en la escena:** más de 10  
-➡ **Figuras nuevas implementadas:** 5 (Toroide, Cono, Elipsoide, Disco de energia, Cilindro)
+ **Total de figuras en la escena:** más de 10  
+ **Figuras nuevas implementadas:** 5 (Toroide, Cono, Elipsoide, Disco de energia, Cilindro)
 
 ---
 
@@ -54,7 +54,7 @@ Se utilizaron **4 materiales principales**, cada uno con propiedades únicas:
 
 ---
 
-### 💡 Iluminación
+### Iluminación
 Sistema de iluminación múltiple:
 
 | Tipo | Cantidad | Descripción |
@@ -63,11 +63,11 @@ Sistema de iluminación múltiple:
 | **PointLight** | 4 | Luces de refuerzo alrededor del portal |
 | **SpotLight** | 3 | Focos cálidos provenientes de las lámparas del techo |
 
-💡 Además, se incluyen materiales **emisivos** para las luces visibles (bulbos, energía del portal, y elipsoides).
+ Además, se incluyen materiales **emisivos** para las luces visibles (bulbos, energía del portal, y elipsoides).
 
 ---
 
-## 🧠 Aspectos Técnicos Implementados
+## Aspectos Técnicos Implementados
 - **Ray Tracing completo** con reflexión y refracción.  
 - **Cámara en perspectiva** con campo de visión configurable.  
 - **Sombras reales** mediante rayos secundarios.  
@@ -78,7 +78,7 @@ Sistema de iluminación múltiple:
 
 ---
 
-## 🖼️ Archivos Entregados
+## Archivos Entregados
 - `Pro2.py`  
 - `metro.hdr` (Environment Map)  
 - `render_proy2.png` (Render final)  
@@ -91,7 +91,7 @@ Sistema de iluminación múltiple:
 El render final muestra un portal de energía suspendido en un entorno metálico, iluminado por lámparas cálidas y reflejado sobre un piso pulido, logrando un efecto cinematográfico y coherente con la estética Sci-Fi.
 
 ![Render final](render_proy2.png)
-![Imagen de referencia](referencia.png)
+![Imagen de referencia](referencia.jpeg)
 
 ---
 
