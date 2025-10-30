@@ -8,7 +8,7 @@ import ctypes
 
 # ---------------- SHADER UTILS ----------------
 def compile_shader(path, shader_type):
-    with open(path, 'r') as f:
+    with open(path, 'r', encoding='utf-8') as f:
         src = f.read()
     shader = glCreateShader(shader_type)
     glShaderSource(shader, src)
@@ -69,7 +69,7 @@ def main():
     if not glfw.init():
         raise Exception("Error al inicializar GLFW")
 
-    window = glfw.create_window(900, 800, "Casa Madera - Shaders combinables", None, None)
+    window = glfw.create_window(850, 700, "Casa Madera - Shaders combinables", None, None)
     glfw.make_context_current(window)
     glEnable(GL_DEPTH_TEST)
     glClearColor(0.05, 0.06, 0.08, 1.0)
@@ -97,8 +97,8 @@ def main():
     program = create_program("combo_vertex.glsl", "combo_fragment.glsl")
 
     # Matrices base
-    projection = pyrr.matrix44.create_perspective_projection_matrix(45, 900/700, 0.1, 100.0)
-    view = pyrr.matrix44.create_look_at(pyrr.Vector3([0, 2.5, 8]),
+    projection = pyrr.matrix44.create_perspective_projection_matrix(45, 850/700, 0.1, 100.0)
+    view = pyrr.matrix44.create_look_at(pyrr.Vector3([0, 2.5, 10]),
                                         pyrr.Vector3([0, 1, 0]),
                                         pyrr.Vector3([0, 1, 0]))
     model = pyrr.matrix44.create_identity()
@@ -107,20 +107,32 @@ def main():
     # Estados de los efectos
     wave_enabled = False
     glow_enabled = False
+    twist_enabled = False
+    pulse_enabled = False
+    lava_enabled = False
 
     # Controles de teclado
     def key_callback(window, key, scancode, action, mods):
-        nonlocal wave_enabled, glow_enabled
+        nonlocal wave_enabled, glow_enabled, twist_enabled, pulse_enabled, lava_enabled
         if action == glfw.PRESS:
             if key == glfw.KEY_0:
-                wave_enabled = glow_enabled = False
-                print("→ Shaders desactivados (modo base)")
+                wave_enabled = glow_enabled = twist_enabled = pulse_enabled = lava_enabled = False
+                print("→ Shaders desactivados")
             elif key == glfw.KEY_1:
                 wave_enabled = not wave_enabled
-                print("→ Wave Shader:", "ON" if wave_enabled else "OFF")
+                print("Wave:", wave_enabled)
             elif key == glfw.KEY_2:
                 glow_enabled = not glow_enabled
-                print("→ Glow Shader:", "ON" if glow_enabled else "OFF")
+                print("Glow:", glow_enabled)
+            elif key == glfw.KEY_3:
+                twist_enabled = not twist_enabled
+                print("Twist:", twist_enabled)
+            elif key == glfw.KEY_4:
+                pulse_enabled = not pulse_enabled
+                print("Pulse:", pulse_enabled)
+            elif key == glfw.KEY_5:
+                lava_enabled = not lava_enabled
+                print("Lava Cracks:", lava_enabled)
     glfw.set_key_callback(window, key_callback)
 
     # Render loop
@@ -136,20 +148,33 @@ def main():
         glUniformMatrix4fv(glGetUniformLocation(program, "u_view"), 1, GL_FALSE, view)
         glUniformMatrix4fv(glGetUniformLocation(program, "u_projection"), 1, GL_FALSE, projection)
 
-        # Luz cálida y ambiente general
-        glUniform3f(glGetUniformLocation(program, "u_lightPos"), -2.0, 3.2, 6.0)
+        # Luz cálida
+        glUniform3f(glGetUniformLocation(program, "u_lightPos"), -2.0, 3.0, 6.0)
         glUniform3f(glGetUniformLocation(program, "u_lightColor"), 1.0, 0.95, 0.9)
         glUniform3f(glGetUniformLocation(program, "u_viewPos"), 0.0, 2.0, 6.0)
 
-        # Parámetros de wave
+        # --- Vertex effects ---
+        glUniform1i(glGetUniformLocation(program, "u_waveEnabled"), wave_enabled)
         glUniform1f(glGetUniformLocation(program, "u_amplitude"), 0.15)
         glUniform1f(glGetUniformLocation(program, "u_frequency"), 2.0)
         glUniform1f(glGetUniformLocation(program, "u_speed"), 1.5)
-        glUniform1i(glGetUniformLocation(program, "u_waveEnabled"), wave_enabled)
 
-        # Parámetros de glow
-        glUniform1f(glGetUniformLocation(program, "u_glowIntensity"), 2.0)
+        glUniform1i(glGetUniformLocation(program, "u_twistEnabled"), twist_enabled)
+        glUniform1f(glGetUniformLocation(program, "u_twistAmount"), 0.5)
+        glUniform1f(glGetUniformLocation(program, "u_pivotY"), 0.0)
+
+        glUniform1i(glGetUniformLocation(program, "u_pulseEnabled"), pulse_enabled)
+        glUniform1f(glGetUniformLocation(program, "u_pulseSpeed"), 2.0)
+        glUniform1f(glGetUniformLocation(program, "u_pulseAmount"), 0.03)
+
+        # --- Fragment effects ---
         glUniform1i(glGetUniformLocation(program, "u_glowEnabled"), glow_enabled)
+        glUniform1f(glGetUniformLocation(program, "u_glowIntensity"), 2.0)
+
+        glUniform1i(glGetUniformLocation(program, "u_lavaEnabled"), lava_enabled)
+        glUniform1f(glGetUniformLocation(program, "u_crackScale"), 10.0)
+        glUniform1f(glGetUniformLocation(program, "u_crackSpeed"), 2.0)
+        glUniform3f(glGetUniformLocation(program, "u_fireColor"), 1.0, 0.45, 0.1)
 
         # Textura
         glActiveTexture(GL_TEXTURE0)
