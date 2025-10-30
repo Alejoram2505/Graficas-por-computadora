@@ -84,7 +84,16 @@ u_fireColor = (1.0, 0.45, 0.1)
 
 ## Resultado
 
-![Demostración](lab9.mp4)
+![Demostración video](lab9.mp4)
+
+imagenes de referencia 
+![Demostración](wave.png)
+![Demostración](glow.png)
+![Demostración](twist.png)
+![Demostración](pulse.png)
+![Demostración](lava.png)
+![Demostración](mix.png)
+![Demostración](mix2.png)
 
 ---
 
