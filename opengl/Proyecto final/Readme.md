@@ -57,7 +57,7 @@ El objetivo es implementar un visualizador de modelos 3D en OpenGL que permita:
 ---
 
 ## video demostración
-![Dewmostración](rhttps://uvggt-my.sharepoint.com/:v:/g/personal/ram23601_uvg_edu_gt/IQBgfU2OiKvrSp6urgypQfNEAYt61GakQZ2dHUiQo_C7fNw?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=bYeWe2)
+![Demostración](https://uvggt-my.sharepoint.com/:v:/g/personal/ram23601_uvg_edu_gt/IQBgfU2OiKvrSp6urgypQfNEAYt61GakQZ2dHUiQo_C7fNw?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=bYeWe2)
 
 ---
 
