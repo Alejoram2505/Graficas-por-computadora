@@ -91,7 +91,6 @@ def load_texture(path):
     if path.lower().endswith(".hdr"):
         img = iio.imread(path).astype(np.float32)
         img = np.flipud(img)
-        # Normalizamos a 0-1 para que funcione como skymap y no queme la escena
         maxv = np.max(img)
         if maxv > 0:
             img = img / maxv
@@ -121,7 +120,6 @@ def load_texture(path):
 
 # ---------------- FULLSCREEN QUAD ----------------
 def create_fullscreen_quad():
-    # 2D quad en NDC
     verts = np.array([
         -1.0, -1.0,
          1.0, -1.0,
@@ -136,6 +134,36 @@ def create_fullscreen_quad():
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, ctypes.c_void_p(0))
     glEnableVertexAttribArray(0)
     return vao
+
+# ---------------- GROUND PLANE ----------------
+def create_ground_plane():
+    size = 30.0  # radio del piso
+    vertices = np.array([
+        # x,    y,   z,    u,  v,   nx,  ny, nz
+        -size, 0.0, -size,  0.0, 0.0,   0.0, 1.0, 0.0,
+         size, 0.0, -size,  8.0, 0.0,   0.0, 1.0, 0.0,
+        -size, 0.0,  size,  0.0, 8.0,   0.0, 1.0, 0.0,
+
+         size, 0.0, -size,  8.0, 0.0,   0.0, 1.0, 0.0,
+         size, 0.0,  size,  8.0, 8.0,   0.0, 1.0, 0.0,
+        -size, 0.0,  size,  0.0, 8.0,   0.0, 1.0, 0.0,
+    ], dtype=np.float32)
+
+    vao = glGenVertexArrays(1)
+    vbo = glGenBuffers(1)
+    glBindVertexArray(vao)
+    glBindBuffer(GL_ARRAY_BUFFER, vbo)
+    glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW)
+
+    stride = 8 * 4
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(0))
+    glEnableVertexAttribArray(0)
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(12))
+    glEnableVertexAttribArray(1)
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(20))
+    glEnableVertexAttribArray(2)
+
+    return vao, 6  # 6 vértices
 
 # ---------------- CAMERA ORBIT ----------------
 class OrbitCamera:
@@ -183,11 +211,11 @@ def main():
 
     # --- Models ---
     model_files = [
-        ("objetos/Planta.obj",      "texturas/planta.jpg"),     # 0
-        ("objetos/casita.obj",      "texturas/casita.png"),     # 1
-        ("objetos/casa_madera.obj", "texturas/casa_madera.png"),# 2
-        ("objetos/casa_nieve.obj",  "texturas/casa_nieve.jpg"), # 3
-        ("objetos/Axe.obj",         "texturas/Axe.png"),        # 4 (ajusta nombre si es distinto)
+        ("objetos/Planta.obj",      "texturas/planta.jpg"),      # 0
+        ("objetos/casita.obj",      "texturas/casita.png"),      # 1
+        ("objetos/casa_madera.obj", "texturas/casa_madera.png"), # 2
+        ("objetos/casa_nieve.obj",  "texturas/casa_nieve.jpg"),  # 3
+        ("objetos/Axe.obj",         "texturas/Axe.png"),         # 4
     ]
 
     vao_list, tex_list, size_list = [], [], []
@@ -212,29 +240,32 @@ def main():
         size_list.append(len(data)//8)
 
     # Posiciones y escalas del diorama (Pueblito Campestre)
-    # 0 Planta, 1 Casita, 2 Casa madera, 3 Casa nieve, 4 Hacha
     positions = [
-        pyrr.Vector3([ -6.0,  0.0,  3.0 ]),   # Planta (frente izquierda)
-        pyrr.Vector3([ -8.0,  0.0, -2.0 ]),   # Casita pequeña (izquierda atrás)
-        pyrr.Vector3([  0.0,  0.0,  0.0 ]),   # Casa madera (centro del pueblo)
-        pyrr.Vector3([  5.0,  0.0, -3.0 ]),   # Casa nieve (derecha atrás)
-        pyrr.Vector3([  1.5,  0.0,  3.5 ]),   # Hacha (frente derecha)
+        pyrr.Vector3([-4.5, 0.0, -2.2]),   # Planta - front-left
+        pyrr.Vector3([-5.5, 0.0, -8.5]),   # Casita pequeña - back-left
+        pyrr.Vector3([ -15.0, 0.0, -2.0]),   # Casa madera - centro
+        pyrr.Vector3([ -5.0,  0.0, 9.0]),  # Casa nieve - back-right
+        pyrr.Vector3([ -3.5, 0.3, -2.2]),  # Hacha - front-right
     ]
 
     scales = [
-        1.0,   # Planta
-        0.8,   # Casita
-        2.0,   # Casa madera
+        4.0,   # Planta
+        0.5,   # Casita
+        1.5,   # Casa madera
         0.1,   # Casa nieve
-        0.01,  # Hacha (scaneo gigante)
+        0.004,  # Hacha
     ]
+
+    # --- Piso ---
+    ground_vao, ground_count = create_ground_plane()
+    ground_tex = load_texture("texturas/pasto.jpg")
 
     # --- Skybox ---
     hdr_tex = load_texture("Campo.hdr")
     fs_quad_sky = create_fullscreen_quad()
 
     # --- Post-process ---
-    fs_quad_post = fs_quad_sky  # podemos reutilizar el mismo quad
+    fs_quad_post = fs_quad_sky  # reutilizamos el mismo quad
 
     # Framebuffer para post-processing
     fbo = glGenFramebuffers(1)
@@ -262,26 +293,25 @@ def main():
     rotating = False
 
     # Fisheye / post
-    post_enabled = False 
-    fisheye_strength = 0.28  # se controla con I / O
+    post_enabled = False
+    fisheye_strength = 0.28
+    chrom_enabled = False  # se controla con I / O
 
     # Punto focal (índice de modelo)
     focus_index = 2  # casa madera
 
-    # Combinaciones de shaders por modelo
-    # wave, pulse, twist, lava, glow, snow
-
+    # Shaders por modelo (wave, pulse, twist, lava, glow, snow)
     shader_sets = [
-        (False, False, False, False, False, False),# Planta: wave + lava cracks
-        (False, False, False, False, False, False),# Casita: pulse + twist suave
-        (False, False, False, False, False, False),# Casa madera: lava cracks sutil
-        (False, False, False, False, False, False),# Casa nieve: wave leve + snow
-        (False, False, False, False, False, False),# Hacha: pulse + glow
+        (False, False, False, False, False, False),  # Planta
+        (False, False, False, False, False, False),  # Casita
+        (False, False, False, False, False, False),  # Casa madera
+        (False, False, False, False, False, False),  # Casa nieve
+        (False, False, False, False, False, False),  # Hacha
     ]
-   
-    # Input callbacks
+
+    # ---------------- INPUT CALLBACKS ----------------
     def key_callback(window, key, scancode, action, mods):
-        nonlocal cam, post_enabled, fisheye_strength, focus_index
+        nonlocal cam, post_enabled, fisheye_strength, focus_index, chrom_enabled
         if action == glfw.PRESS or action == glfw.REPEAT:
             # Cambio de foco de cámara
             if key == glfw.KEY_1: focus_index = 0
@@ -309,6 +339,7 @@ def main():
             # Toggle postprocess
             elif key == glfw.KEY_P:
                 post_enabled = not post_enabled
+                chrom_enabled = not chrom_enabled
 
             # Intensidad fisheye (I/O)
             elif key == glfw.KEY_I:
@@ -316,35 +347,33 @@ def main():
             elif key == glfw.KEY_O:
                 fisheye_strength = max(0.0, fisheye_strength - 0.05)
 
-            # Activación manual de shaders por tecla 
-            elif key == glfw.KEY_6:   # Wave ON/OFF
+            # Activación manual de shaders por tecla
+            elif key == glfw.KEY_6:   # Wave
                 w, p, t, l, g, s = shader_sets[focus_index]
                 shader_sets[focus_index] = (not w, p, t, l, g, s)
 
-            elif key == glfw.KEY_7:   # Pulse ON/OFF
+            elif key == glfw.KEY_7:   # Pulse
                 w, p, t, l, g, s = shader_sets[focus_index]
                 shader_sets[focus_index] = (w, not p, t, l, g, s)
 
-            elif key == glfw.KEY_8:   # Twist ON/OFF
+            elif key == glfw.KEY_8:   # Twist
                 w, p, t, l, g, s = shader_sets[focus_index]
                 shader_sets[focus_index] = (w, p, not t, l, g, s)
 
-            elif key == glfw.KEY_9:   # Lava Cracks ON/OFF
+            elif key == glfw.KEY_9:   # Lava
                 w, p, t, l, g, s = shader_sets[focus_index]
                 shader_sets[focus_index] = (w, p, t, not l, g, s)
 
-            elif key == glfw.KEY_0:   # Glow ON/OFF
+            elif key == glfw.KEY_0:   # Glow
                 w, p, t, l, g, s = shader_sets[focus_index]
                 shader_sets[focus_index] = (w, p, t, l, not g, s)
 
-            elif key == glfw.KEY_N:   # Snow ON/OFF
+            elif key == glfw.KEY_N:   # Snow
                 w, p, t, l, g, s = shader_sets[focus_index]
                 shader_sets[focus_index] = (w, p, t, l, g, not s)
 
             elif key == glfw.KEY_M:   # Apagar TODO para modelo actual
                 shader_sets[focus_index] = (False, False, False, False, False, False)
-
-            
 
     glfw.set_key_callback(window, key_callback)
 
@@ -377,7 +406,9 @@ def main():
         # La cámara siempre mira al modelo de focus
         cam.target = positions[focus_index] + pyrr.Vector3([0.0, 2.0, 0.0])
         view, cam_pos = cam.get_view()
-        projection = pyrr.matrix44.create_perspective_projection_matrix(45, width/height, 0.1, 200.0)
+        projection = pyrr.matrix44.create_perspective_projection_matrix(
+            45, width/height, 0.1, 200.0
+        )
 
         # --------- 1) Render a FBO (scene + skybox) ----------
         glBindFramebuffer(GL_FRAMEBUFFER, fbo)
@@ -402,7 +433,7 @@ def main():
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
         glDepthMask(GL_TRUE)
 
-        # ---- Modelos ----
+        # ---- Piso + Modelos ----
         glUseProgram(model_program)
         glUniformMatrix4fv(glGetUniformLocation(model_program, "u_view"), 1, GL_FALSE, view)
         glUniformMatrix4fv(glGetUniformLocation(model_program, "u_projection"), 1, GL_FALSE, projection)
@@ -411,6 +442,25 @@ def main():
         glUniform3f(glGetUniformLocation(model_program, "u_lightColor"), 1.0, 0.97, 0.9)
         glUniform3f(glGetUniformLocation(model_program, "u_viewPos"), cam_pos.x, cam_pos.y, cam_pos.z)
 
+        # ---- Piso ----
+        glUniform1i(glGetUniformLocation(model_program, "u_waveEnabled"), 0)
+        glUniform1i(glGetUniformLocation(model_program, "u_pulseEnabled"), 0)
+        glUniform1i(glGetUniformLocation(model_program, "u_twistEnabled"), 0)
+        glUniform1i(glGetUniformLocation(model_program, "u_lavaEnabled"), 0)
+        glUniform1i(glGetUniformLocation(model_program, "u_glowEnabled"), 0)
+        glUniform1i(glGetUniformLocation(model_program, "u_snowEnabled"), 0)
+
+        ground_model = pyrr.matrix44.create_identity()
+        glUniformMatrix4fv(glGetUniformLocation(model_program, "u_model"), 1, GL_FALSE, ground_model)
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, ground_tex)
+        glUniform1i(glGetUniformLocation(model_program, "u_diffuseMap"), 0)
+
+        glBindVertexArray(ground_vao)
+        glDrawArrays(GL_TRIANGLES, 0, ground_count)
+
+        # ---- Modelos ----
         for i in range(len(vao_list)):
             wave, pulse, twist, lava, glow, snow = shader_sets[i]
             glUniform1i(glGetUniformLocation(model_program, "u_waveEnabled"),  int(wave))
@@ -423,13 +473,13 @@ def main():
             scale = scales[i]
             model = pyrr.matrix44.create_identity()
             model = pyrr.matrix44.multiply(
-                        model,
-                        pyrr.matrix44.create_from_scale(pyrr.Vector3([scale, scale, scale]))
-                    )
+                model,
+                pyrr.matrix44.create_from_scale(pyrr.Vector3([scale, scale, scale]))
+            )
             model = pyrr.matrix44.multiply(
-                        model,
-                        pyrr.matrix44.create_from_translation(positions[i])
-                    )
+                model,
+                pyrr.matrix44.create_from_translation(positions[i])
+            )
 
             glUniformMatrix4fv(glGetUniformLocation(model_program, "u_model"), 1, GL_FALSE, model)
 
@@ -451,6 +501,7 @@ def main():
         glBindTexture(GL_TEXTURE_2D, color_tex)
         glUniform1i(glGetUniformLocation(post_program, "u_screenTex"), 0)
         glUniform1i(glGetUniformLocation(post_program, "u_enableFisheye"), int(post_enabled))
+        glUniform1i(glGetUniformLocation(post_program, "u_enableChromAb"), int(chrom_enabled))
         glUniform1f(glGetUniformLocation(post_program, "u_strength"), fisheye_strength)
 
         glBindVertexArray(fs_quad_post)
