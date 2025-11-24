@@ -241,11 +241,11 @@ def main():
 
     # Posiciones y escalas del diorama (Pueblito Campestre)
     positions = [
-        pyrr.Vector3([-4.5, 0.0, -2.2]),   # Planta - front-left
-        pyrr.Vector3([-5.5, 0.0, -8.5]),   # Casita pequeña - back-left
-        pyrr.Vector3([ -15.0, 0.0, -2.0]),   # Casa madera - centro
-        pyrr.Vector3([ -5.0,  0.0, 9.0]),  # Casa nieve - back-right
-        pyrr.Vector3([ -3.5, 0.3, -2.2]),  # Hacha - front-right
+        pyrr.Vector3([-4.5, 0.0, -2.2]),   # Planta
+        pyrr.Vector3([-5.5, 0.0, -8.5]),   # Casita pequeña
+        pyrr.Vector3([ -15.0, 0.0, -2.0]),   # Casa madera 
+        pyrr.Vector3([ -5.0,  0.0, 9.0]),  # Casa nieve 
+        pyrr.Vector3([ -3.5, 0.3, -2.2]),  # Hacha 
     ]
 
     scales = [
@@ -265,7 +265,7 @@ def main():
     fs_quad_sky = create_fullscreen_quad()
 
     # --- Post-process ---
-    fs_quad_post = fs_quad_sky  # reutilizamos el mismo quad
+    fs_quad_post = fs_quad_sky  
 
     # Framebuffer para post-processing
     fbo = glGenFramebuffers(1)
